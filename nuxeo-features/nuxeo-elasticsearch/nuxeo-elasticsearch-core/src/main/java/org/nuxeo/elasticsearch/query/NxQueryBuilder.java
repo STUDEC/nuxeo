@@ -327,7 +327,11 @@ public class NxQueryBuilder {
         if (aggFilter != null) {
             request.setPostFilter(aggFilter);
         }
-        // Fields selection
+
+        // Add highlighting
+        request.addHighlightedField("ecm:binarytext.fulltext", 150, 3).setHighlighterRequireFieldMatch(false);
+
+       // Fields selection
         if (!isFetchFromElasticsearch()) {
             request.addFields(getSelectFields());
         }

@@ -207,9 +207,19 @@
         }
       },
       "ecm:binarytext" : {
-         "type" : "string",
-         "index" : "no",
-         "include_in_all" : true
+         "type" : "multi_field",
+         "fields" : {
+            "ecm:binarytext" : {
+              "index" : "no",
+              "include_in_all" : true,
+              "type" : "string"
+            },
+            "fulltext" : {
+              "type": "string",
+              "term_vector": "with_positions_offsets",
+              "analyzer" : "fulltext"
+            }
+         }
       },
       "ecm:path" : {
          "type" : "multi_field",
