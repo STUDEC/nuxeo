@@ -9,4 +9,10 @@
     <clientInitialization class="org.nuxeo.elasticsearch.core.ESClientInitializationServiceImpl" />
   </extension>
 
+  <extension target="org.nuxeo.elasticsearch.ElasticSearchComponent"  point="elasticSearchHighlight">
+    <elasticSearchHighlight enabled="true">
+      <field>ecm:binarytext</field>
+    </elasticSearchHighlight>
+  </extension>
+
 </component>

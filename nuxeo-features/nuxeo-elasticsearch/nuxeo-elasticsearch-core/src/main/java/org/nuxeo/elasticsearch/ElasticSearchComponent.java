@@ -59,6 +59,7 @@ import org.nuxeo.elasticsearch.api.EsScrollResult;
 import org.nuxeo.elasticsearch.commands.IndexingCommand;
 import org.nuxeo.elasticsearch.config.ESClientInitializationDescriptor;
 import org.nuxeo.elasticsearch.config.ElasticSearchDocWriterDescriptor;
+import org.nuxeo.elasticsearch.config.ElasticSearchHighlightConfig;
 import org.nuxeo.elasticsearch.config.ElasticSearchIndexConfig;
 import org.nuxeo.elasticsearch.config.ElasticSearchLocalConfig;
 import org.nuxeo.elasticsearch.config.ElasticSearchRemoteConfig;
@@ -81,8 +82,8 @@ import com.google.common.util.concurrent.MoreExecutors;
 /**
  * Component used to configure and manage ElasticSearch integration
  */
-public class ElasticSearchComponent extends DefaultComponent implements ElasticSearchAdmin, ElasticSearchIndexing,
-        ElasticSearchService {
+public class ElasticSearchComponent extends DefaultComponent
+        implements ElasticSearchAdmin, ElasticSearchIndexing, ElasticSearchService {
 
     private static final Log log = LogFactory.getLog(ElasticSearchComponent.class);
 
@@ -91,6 +92,8 @@ public class ElasticSearchComponent extends DefaultComponent implements ElasticS
     private static final String EP_LOCAL = "elasticSearchLocal";
 
     private static final String EP_INDEX = "elasticSearchIndex";
+
+    private static final String EP_HIGHLIGHT = "elasticSearchHighlight";
 
     private static final String EP_DOC_WRITER = "elasticSearchDocWriter";
 
@@ -106,6 +109,8 @@ public class ElasticSearchComponent extends DefaultComponent implements ElasticS
     private ElasticSearchLocalConfig localConfig;
 
     private ElasticSearchRemoteConfig remoteConfig;
+
+    private ElasticSearchHighlightConfig highlightConfig;
 
     private ElasticSearchAdminImpl esa;
 
@@ -142,7 +147,8 @@ public class ElasticSearchComponent extends DefaultComponent implements ElasticS
             if (remoteContribution.isEnabled()) {
                 remoteConfig = remoteContribution;
                 localConfig = null;
-                log.info("Registering remote configuration: " + remoteConfig + ", loaded from " + contributor.getName());
+                log.info(
+                        "Registering remote configuration: " + remoteConfig + ", loaded from " + contributor.getName());
             } else if (remoteConfig != null) {
                 log.info("Disabling previous remote configuration, deactivated by " + contributor.getName());
                 remoteConfig = null;
@@ -160,6 +166,9 @@ public class ElasticSearchComponent extends DefaultComponent implements ElasticS
                 indexConfig.remove(idx.getName());
             }
             break;
+        case EP_HIGHLIGHT:
+            highlightConfig = (ElasticSearchHighlightConfig) contribution;
+            break;
         case EP_DOC_WRITER:
             ElasticSearchDocWriterDescriptor writerDescriptor = (ElasticSearchDocWriterDescriptor) contribution;
             try {
@@ -174,7 +183,8 @@ public class ElasticSearchComponent extends DefaultComponent implements ElasticS
             try {
                 clientInitService = clientInitDescriptor.getKlass().newInstance();
             } catch (IllegalAccessException | InstantiationException e) {
-                log.error("Can not instantiate ES Client initialization service from " + clientInitDescriptor.getKlass());
+                log.error(
+                        "Can not instantiate ES Client initialization service from " + clientInitDescriptor.getKlass());
                 throw new RuntimeException(e);
             }
             break;
@@ -189,7 +199,7 @@ public class ElasticSearchComponent extends DefaultComponent implements ElasticS
             log.info("Elasticsearch service is disabled");
             return;
         }
-        esa = new ElasticSearchAdminImpl(localConfig, remoteConfig, indexConfig, clientInitService);
+        esa = new ElasticSearchAdminImpl(localConfig, remoteConfig, indexConfig, highlightConfig, clientInitService);
         esi = new ElasticSearchIndexingImpl(esa, jsonESDocumentWriter);
         ess = new ElasticSearchServiceImpl(esa);
         initListenerThreadPool();
@@ -343,7 +353,8 @@ public class ElasticSearchComponent extends DefaultComponent implements ElasticS
     }
 
     protected void initListenerThreadPool() {
-        waiterExecutorService = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool(new NamedThreadFactory()));
+        waiterExecutorService = MoreExecutors.listeningDecorator(
+                Executors.newCachedThreadPool(new NamedThreadFactory()));
     }
 
     @Override
@@ -533,6 +544,11 @@ public class ElasticSearchComponent extends DefaultComponent implements ElasticS
                                                           .offset(offset)
                                                           .addSort(sortInfos);
         return query(query);
+    }
+
+    @Override
+    public List<String> getHighlightFields() {
+        return ess.getHighlightFields();
     }
 
     // misc ====================================================================

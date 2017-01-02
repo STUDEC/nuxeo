@@ -26,6 +26,8 @@ import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.SortInfo;
 import org.nuxeo.elasticsearch.query.NxQueryBuilder;
 
+import java.util.List;
+
 /**
  * Interface to search on documents
  *
@@ -92,5 +94,10 @@ public interface ElasticSearchService {
     @Deprecated
     DocumentModelList query(CoreSession session, QueryBuilder queryBuilder, int limit, int offset,
             SortInfo... sortInfos);
+
+    /**
+     * @since 9.1
+     */
+    List<String> getHighlightFields();
 
 }

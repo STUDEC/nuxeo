@@ -200,4 +200,9 @@ public interface ElasticSearchAdmin {
      */
     boolean useExternalVersion();
 
+    /**
+     * @since 9.1
+     */
+    List<String> getHighlightFields();
+
 }

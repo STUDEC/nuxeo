@@ -151,4 +151,18 @@
     <object class="org.nuxeo.elasticsearch.config.ESClientInitializationDescriptor" />
   </extension-point>
 
+  <extension-point name="elasticSearchHighlight">
+    <documentation>
+      Extension point to define configuration of Elasticsearch highlighting.
+
+      <code>
+        <elasticSearchHighlight enabled="true">
+          <field>ecm:binarytext</field>
+        </elasticSearchHighlight>
+      </code>
+
+    </documentation>
+    <object class="org.nuxeo.elasticsearch.config.ElasticSearchHighlightConfig" />
+  </extension-point>
+
 </component>

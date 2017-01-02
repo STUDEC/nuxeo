@@ -51,6 +51,7 @@ import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 import org.nuxeo.elasticsearch.api.ESClientInitializationService;
 import org.nuxeo.elasticsearch.api.ElasticSearchAdmin;
+import org.nuxeo.elasticsearch.config.ElasticSearchHighlightConfig;
 import org.nuxeo.elasticsearch.config.ElasticSearchIndexConfig;
 import org.nuxeo.elasticsearch.config.ElasticSearchLocalConfig;
 import org.nuxeo.elasticsearch.config.ElasticSearchRemoteConfig;
@@ -86,6 +87,8 @@ public class ElasticSearchAdminImpl implements ElasticSearchAdmin {
 
     private final ESClientInitializationService clientInitService;
 
+    private final ElasticSearchHighlightConfig highlightConfig;
+
     private String[] includeSourceFields;
 
     private String[] excludeSourceFields;
@@ -103,7 +106,7 @@ public class ElasticSearchAdminImpl implements ElasticSearchAdmin {
     @Deprecated
     public ElasticSearchAdminImpl(ElasticSearchLocalConfig localConfig, ElasticSearchRemoteConfig remoteConfig,
             Map<String, ElasticSearchIndexConfig> indexConfig) {
-        this(localConfig, remoteConfig, indexConfig, null);
+        this(localConfig, remoteConfig, indexConfig, null, null);
     }
 
     /**
@@ -113,10 +116,11 @@ public class ElasticSearchAdminImpl implements ElasticSearchAdmin {
      * @since 9.1
      */
     public ElasticSearchAdminImpl(ElasticSearchLocalConfig localConfig, ElasticSearchRemoteConfig remoteConfig,
-            Map<String, ElasticSearchIndexConfig> indexConfig, ESClientInitializationService clientInitService) {
+            Map<String, ElasticSearchIndexConfig> indexConfig, ElasticSearchHighlightConfig highlightConfig, ESClientInitializationService clientInitService) {
         this.remoteConfig = remoteConfig;
         this.localConfig = localConfig;
         this.indexConfig = indexConfig;
+        this.highlightConfig = highlightConfig;
         this.clientInitService = clientInitService;
         connect();
         initializeIndexes();
@@ -502,6 +506,14 @@ public class ElasticSearchAdminImpl implements ElasticSearchAdmin {
             return localConfig.useExternalVersion();
         }
         return remoteConfig.useExternalVersion();
+    }
+
+    @Override
+    public List<String> getHighlightFields() {
+        if (highlightConfig != null && highlightConfig.isEnabled()) {
+            return highlightConfig.getFields();
+        }
+        return null;
     }
 
     @Override

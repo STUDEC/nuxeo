@@ -93,6 +93,8 @@ public class NxQueryBuilder {
 
     private boolean esOnly = false;
 
+    private List<String> highlightFields;
+
     public NxQueryBuilder(CoreSession coreSession) {
         session = coreSession;
         repositories.add(coreSession.getRepositoryName());
@@ -193,6 +195,14 @@ public class NxQueryBuilder {
         if (aggregates != null && !aggregates.isEmpty()) {
             this.aggregates.addAll(aggregates);
         }
+        return this;
+    }
+
+    /**
+     * @since 9.1
+     */
+    public NxQueryBuilder highlight(List<String> highlightFields) {
+        this.highlightFields = highlightFields;
         return this;
     }
 
@@ -329,7 +339,12 @@ public class NxQueryBuilder {
         }
 
         // Add highlighting
-        request.addHighlightedField("ecm:binarytext.fulltext", 150, 3).setHighlighterRequireFieldMatch(false);
+        if (highlightFields != null && !highlightFields.isEmpty()) {
+            for (String field : highlightFields) {
+                request.addHighlightedField(field + ".fulltext");
+            }
+            request.setHighlighterRequireFieldMatch(false);
+        }
 
        // Fields selection
         if (!isFetchFromElasticsearch()) {

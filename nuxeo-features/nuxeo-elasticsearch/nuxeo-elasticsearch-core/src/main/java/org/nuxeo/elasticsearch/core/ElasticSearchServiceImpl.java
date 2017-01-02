@@ -104,6 +104,11 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
     }
 
     @Override
+    public List<String> getHighlightFields() {
+        return esa.getHighlightFields();
+    }
+
+    @Override
     public DocumentModelList query(NxQueryBuilder queryBuilder) {
         return queryAndAggregate(queryBuilder).getDocuments();
     }
