@@ -48,8 +48,10 @@ public class HighlightJsonEnricher extends AbstractJsonEnricher<DocumentModel> {
         jg.writeFieldName(NAME);
         jg.writeStartObject();
         Map<String, List<String>> h = (Map<String, List<String>>) document.getContextData(NAME);
-        for (String field : h.keySet()) {
-            jg.writeObjectField(field, h.get(field));
+        if (h != null) {
+            for (String field : h.keySet()) {
+                jg.writeObjectField(field, h.get(field));
+            }
         }
         jg.writeEndObject();
     }

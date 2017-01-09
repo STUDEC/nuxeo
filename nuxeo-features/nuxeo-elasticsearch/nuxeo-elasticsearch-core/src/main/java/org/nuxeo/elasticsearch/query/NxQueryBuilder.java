@@ -341,7 +341,7 @@ public class NxQueryBuilder {
         // Add highlighting
         if (highlightFields != null && !highlightFields.isEmpty()) {
             for (String field : highlightFields) {
-                request.addHighlightedField(field + ".fulltext");
+                request.addHighlightedField(field);
             }
             request.setHighlighterRequireFieldMatch(false);
         }
