@@ -20,6 +20,7 @@
 
 package org.nuxeo.ecm.core.filter;
 
+import com.google.common.base.CharMatcher;
 import org.nuxeo.ecm.core.api.DocumentModel;
 
 /**
@@ -29,6 +30,8 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 public interface CharacterFilteringService {
 
     boolean isFilteringEnabled();
+
+    String filter(CharMatcher charsToRemove, String value);
 
     /**
      * By default, remove all invalid control characters that prevent XML validation

@@ -22,11 +22,11 @@ package org.nuxeo.ecm.core.filter;
 
 import com.google.common.base.CharMatcher;
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.model.Property;
+import org.nuxeo.ecm.core.api.model.impl.ArrayProperty;
 import org.nuxeo.ecm.core.api.model.impl.ComplexProperty;
+import org.nuxeo.ecm.core.api.model.impl.ListProperty;
 import org.nuxeo.ecm.core.api.model.impl.primitives.StringProperty;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
@@ -38,8 +38,6 @@ import java.util.List;
  * @since 9.1
  */
 public class CharacterFilteringServiceImpl extends DefaultComponent implements CharacterFilteringService {
-
-    private static final Log log = LogFactory.getLog(CharacterFilteringServiceImpl.class);
 
     public static final String FILTERING_XP = "filtering";
 
@@ -60,10 +58,17 @@ public class CharacterFilteringServiceImpl extends DefaultComponent implements C
     }
 
     @Override
+    public String filter(CharMatcher charsToRemove, String value) {
+        return charsToRemove.removeFrom(value);
+    }
+
+    @Override
     public void filterChars(DocumentModel docModel) {
         CharMatcher charsToPreserve = CharMatcher.anyOf("\r\n\t");
         CharMatcher allButPreserved = charsToPreserve.negate();
         CharMatcher controlCharactersToRemove = CharMatcher.JAVA_ISO_CONTROL.and(allButPreserved);
+        controlCharactersToRemove = controlCharactersToRemove.or(
+                CharMatcher.INVISIBLE.and(CharMatcher.WHITESPACE.negate()));
 
         List<String> additionalChars = desc.getUnallowedChars();
         String otherCharsToRemove = "";
@@ -78,19 +83,30 @@ public class CharacterFilteringServiceImpl extends DefaultComponent implements C
         for (String schema : schemas) {
             Collection<Property> properties = docModel.getPropertyObjects(schema);
             for (Property prop : properties) {
-                filterProperty(controlCharactersToRemove, prop, docModel, schema);
+                filterProperty(controlCharactersToRemove, prop, docModel);
             }
         }
     }
 
-    private void filterProperty(CharMatcher controlChars, Property prop, DocumentModel docModel, String schema) {
+    private void filterProperty(CharMatcher controlChars, Property prop, DocumentModel docModel) {
         if (prop instanceof StringProperty && prop.getValue() != null) {
-            String filteredProp = controlChars.removeFrom((String) prop.getValue());
-            docModel.setProperty(schema, prop.getName(), filteredProp);
+            String filteredProp = filter(controlChars, (String) prop.getValue());
+            docModel.setPropertyValue(prop.getPath(), filteredProp);
+        } else if (prop instanceof ArrayProperty && prop.getValue() != null && prop.getValue() instanceof String[]) {
+            String[] arrayProp = (String[]) prop.getValue();
+            for (int i = 0; i < arrayProp.length; i++) {
+                arrayProp[i] = arrayProp[i] != null ? filter(controlChars, arrayProp[i]) : null;
+            }
+            docModel.setPropertyValue(prop.getPath(), arrayProp);
         } else if (prop instanceof ComplexProperty) {
             ComplexProperty complexProp = (ComplexProperty) prop;
             for (Property subProp : complexProp.getChildren()) {
-                filterProperty(controlChars, subProp, docModel, schema);
+                filterProperty(controlChars, subProp, docModel);
+            }
+        } else if (prop instanceof ListProperty) {
+            ListProperty listProp = (ListProperty) prop;
+            for (Property p : listProp) {
+                filterProperty(controlChars, p, docModel);
             }
         }
     }
