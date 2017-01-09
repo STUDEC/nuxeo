@@ -22,9 +22,6 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-
-import javax.transaction.Transaction;
-
 import org.nuxeo.ecm.core.storage.sql.Mapper;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
@@ -36,24 +33,21 @@ public class JDBCMapperTxSuspender implements InvocationHandler {
         this.mapper = mapper;
     }
 
-    protected Object doInvoke(Method method, Object[] args) throws Throwable {
-        try {
-            return method.invoke(mapper, args);
-        } catch (InvocationTargetException cause) {
-            throw cause.getTargetException();
-        }
-    }
-
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        Transaction tx = TransactionHelper.suspendTransaction();
-        try {
-            return doInvoke(method, args);
-        } finally {
-            if (tx != null) {
-                TransactionHelper.resumeTransaction(tx);
+        Object result = TransactionHelper.runInNewTransaction(() -> {
+            try {
+                return method.invoke(mapper, args);
+            } catch (InvocationTargetException cause) {
+                return cause.getCause();
+            } catch (IllegalAccessException cause) {
+                return cause;
             }
+        });
+        if (result instanceof Throwable) {
+            throw (Throwable) result;
         }
+        return result;
     }
 
     public static Mapper newConnector(Mapper mapper) {
